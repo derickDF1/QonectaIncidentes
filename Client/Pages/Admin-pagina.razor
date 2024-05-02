@@ -1,0 +1,81 @@
+﻿@page "/admin-pagina"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Registrar usuario privilegiado</PageTitle>
+
+<h3>Registro</h3>
+
+<!-- Sección de registro -->
+<div class="row">
+    <EditForm Model="NuevoUsuario">
+        <div><InputText @bind-Value=NuevoUsuario.Nombre placeholder="Ingresa tu usuario"></InputText></div>
+        <div><InputText @bind-Value=NuevoUsuario.Contrasenia placeholder="Ingresa tu Contraseña" type="password"></InputText></div>
+        <div><InputText @bind-Value=ConfirmarContrasenia placeholder="Repite tu Contraseña" type="password"></InputText></div>
+        <p style="margin-bottom: 5px;">ID del Rol a asignar:</p>
+        <div><InputNumber @bind-Value=NuevoUsuario.IdRol placeholder="ID del Rol"></InputNumber></div>
+        <br />
+        <div><button @onclick="registrarUsuario">Registrarse</button></div>
+    </EditForm>
+    <p style="color:red;">@ErrorContraseña</p>
+</div>
+
+<!-- Sección de login -->
+<div class="row">
+    <EditForm Model="UsuarioLogin">
+        <div><InputText @bind-Value=UsuarioLogin.Nombre placeholder="Nombre de usuario"></InputText></div>
+        <div><InputText @bind-Value=UsuarioLogin.Contrasenia placeholder="Contraseña" type="password"></InputText></div>
+        <br />
+        <div><button @onclick="()=>loginUsuario(UsuarioLogin)">Iniciar sesión</button></div>
+    </EditForm>
+    <p style="color:red;">@ErrorLogin</p>
+</div>
+
+@code {
+    Usuario NuevoUsuario = new Usuario();
+    Usuario UsuarioLogin = new Usuario(); // Objeto para el login
+    string ConfirmarContrasenia { get; set; } = string.Empty;
+    string ErrorContraseña { get; set; } = string.Empty;
+    string ErrorLogin { get; set; } = string.Empty;
+
+    public async Task registrarUsuario()
+    {
+        NuevoUsuario.IdRol = Convert.ToInt32(NuevoUsuario.IdRol);
+        //Verificar si las contraseñas coinciden
+        if (NuevoUsuario.Contrasenia == ConfirmarContrasenia)
+        {
+            //Realizar la llamada a la API para registrar al usuario
+            var resultado = await Http.PostAsJsonAsync("api/Usuario", NuevoUsuario);
+        }
+        else
+        {
+            ErrorContraseña = "Las contraseñas no coinciden. Por favor, intenta de nuevo.";
+        }
+    }
+
+    public async Task loginUsuario(Usuario usuario)
+    {
+        try
+        {
+            // Realizar una solicitud HTTP al endpoint de login en tu API
+            var response = await Http.PostAsJsonAsync("api/Usuario/Login", usuario);
+
+            // Verificar el resultado de la solicitud
+            if (response.IsSuccessStatusCode)
+            {
+                // Si la respuesta es exitosa, redirigir al usuario a la página de inicio
+                NavigationManager.NavigateTo("/fetchdata"); // Reemplaza "/pagina-de-inicio" con la URL de la página a la que deseas redirigir
+            }
+            else
+            {
+                // Si la respuesta no es exitosa, mostrar un mensaje de error
+                ErrorLogin = "Nombre de usuario o contraseña incorrectos. Por favor, intenta de nuevo.";
+            }
+        }
+        catch (Exception ex)
+        {
+            // Manejar cualquier error de conexión o de servidor
+            ErrorLogin = "Error al intentar iniciar sesión. Por favor, inténtalo de nuevo más tarde.";
+        }
+    }
+}
